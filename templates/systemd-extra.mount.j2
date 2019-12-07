@@ -1,0 +1,10 @@
+[Unit]
+Description={{ item.description | default(item.path)}}
+
+[Mount]
+What=/dev/{{ docker_lvm_vg }}/{{ item.lv }}
+Where={{ item.path }}
+Type=xfs
+
+[Install]
+WantedBy=local-fs.target

@@ -1,0 +1,8 @@
+---
+docker_lvm: false
+docker_lvm_pv: /dev/sdb
+docker_lvm_vg: data
+docker_lvm_lv: docker-libs
+docker_lvm_lv_size: 10G
+
+docker_lvm_extra: []

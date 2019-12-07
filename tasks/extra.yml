@@ -1,0 +1,59 @@
+- name: extra | Check logical volume
+  command: "lvs {{ docker_lvm_vg }}/{{ item.lv }}"
+  register: lv_status
+  loop: "{{ docker_lvm_extra }}"
+  loop_control:
+    label: "{{ item.lv }}"
+  ignore_errors: yes
+  tags: &TAGS
+    - docker.lvm
+
+- name: extra | Create logical volume
+  lvol:
+    vg: "{{ docker_lvm_vg }}"
+    lv: "{{ item.lv }}"
+    size: "{{ item.lv_size | default('5G') }}"
+  loop: "{{ docker_lvm_extra }}"
+  when: lv_status.results[ansible_loop.index0] is failed
+  loop_control:
+    extended: yes
+    label: "{{ item.lv }}"
+  tags: *TAGS
+- name: extra | Create filesystem
+  filesystem:
+    dev: "/dev/{{ docker_lvm_vg }}/{{ item.lv }}"
+    fstype: xfs
+  loop: "{{ docker_lvm_extra }}"
+  when: lv_status.results[ansible_loop.index0] is failed
+  loop_control:
+    extended: yes
+    label: "{{ item.lv }}"
+  tags: *TAGS
+
+- name: extra | Escape systemd mount filename
+  command: systemd-escape -p --suffix=mount "{{ item.path }}"
+  loop: "{{ docker_lvm_extra }}"
+  loop_control:
+    label: "{{ item.path }}"
+  register: systemd_escape
+  tags: *TAGS
+- name: extra | Create mount systemd file
+  template:
+    src: systemd-extra.mount.j2
+    dest: /etc/systemd/system/{{ systemd_escape.results[ansible_loop.index0].stdout }}
+  loop: "{{ docker_lvm_extra }}"
+  loop_control:
+    extended: yes
+    label: "{{ systemd_escape.results[ansible_loop.index0].stdout }}"
+  notify: Reload systemd
+  tags: *TAGS
+- name: extra | Enable systemd file
+  systemd:
+    state: started
+    name: "{{ systemd_escape.results[ansible_loop.index0].stdout }}"
+    enabled: yes
+  loop: "{{ docker_lvm_extra }}"
+  loop_control:
+    extended: yes
+    label: "{{ systemd_escape.results[ansible_loop.index0].stdout }}"
+  tags: *TAGS
