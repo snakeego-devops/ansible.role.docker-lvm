@@ -1,0 +1,42 @@
+#!/sbin/openrc-run
+DESCRIPTION="{{ item.description | default(item['path']) }}"
+MOUNT_VOLUME=/dev/{{ docker_lvm_vg }}/{{ item.lv }}
+MOUNT_TARGET={{ item.path }}
+MOUNT_FS={{ item.fs | default('xfs') }}
+
+depend() {
+  need localmount
+}
+
+start() {
+  if test -z "$(mount | grep $MOUNT_VOLUME)"; then
+    ebegin "  $DESCRIPTION mount"
+    mount -t $MOUNT_FS $MOUNT_VOLUME $MOUNT_TARGET
+    eend $?
+  else
+    ebegin "  $DESCRIPTION already mounted"
+    eend 0
+  fi
+}
+
+stop() {
+  if test -z "$(mount | grep $MOUNT_VOLUME)"; then
+    ebegin "  $DESCRIPTION already unmounted"
+    eend 0
+  else
+    ebegin "  $DESCRIPTION umount"
+    umount $MOUNT_TARGET
+    eend $?
+  fi
+}
+
+status() {
+  if test -z "$(mount | grep $MOUNT_VOLUME)"; then
+    ebegin "  $DESCRIPTION unmounted"
+    eend 2
+  else
+    ebegin "  $DESCRIPTION is mounted"
+    eend 0
+  fi
+  
+}

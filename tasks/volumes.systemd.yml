@@ -1,0 +1,29 @@
+- name: volumes | systemd | Escape systemd mount filename
+  command: systemd-escape -p --suffix=mount "{{ item.path }}"
+  loop: "{{ docker_lvm_volumes }}"
+  loop_control:
+    label: "{{ item.path }}"
+  register: systemd_escape
+  tags: &tags
+    - always
+- name: volumes | systemd | Create mount systemd file
+  tags: *tags
+  template:
+    src: docker.vm/systemd/volume.mount.j2
+    dest: /etc/systemd/system/{{ systemd_escape.results[ansible_loop.index0].stdout }}
+  loop: "{{ docker_lvm_volumes }}"
+  loop_control:
+    extended: yes
+    label: "{{ systemd_escape.results[ansible_loop.index0].stdout }}"
+  notify: Reload systemd
+
+- name: volumes | systemd | Enable systemd file
+  tags: *tags
+  systemd:
+    state: started
+    name: "{{ systemd_escape.results[ansible_loop.index0].stdout }}"
+    enabled: yes
+  loop: "{{ docker_lvm_volumes }}"
+  loop_control:
+    extended: yes
+    label: "{{ systemd_escape.results[ansible_loop.index0].stdout }}"

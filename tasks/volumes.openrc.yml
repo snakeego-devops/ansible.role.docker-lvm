@@ -1,0 +1,19 @@
+- name: volumes | openrc | Create mount file
+  tags: &tags
+    - always
+  template:
+    src: docker.lvm/openrc/volume.rc.j2
+    dest: /etc/init.d/fs{{ item.path | replace('/','.') }}
+    mode: 755
+  loop: "{{ docker_lvm_volumes }}"
+  loop_control:
+    label: "{{ item.description }} - {{ item.path }} - {{ item.lv_size }}"
+
+- name: volumes | openrc | Autostart
+  tags: *tags
+  service:
+    name: fs{{ item.path | replace('/','.') }}
+    enabled: yes
+  loop: "{{ docker_lvm_volumes }}"
+  loop_control:
+    label: "{{ item.description }} - {{ item.path }} - {{ item.lv_size }}"

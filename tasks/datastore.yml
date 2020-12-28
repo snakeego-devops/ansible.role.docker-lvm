@@ -1,47 +1,19 @@
 - name: datastore | Check volume group
+  tags: &TAGS
+    - docker.lvm
   command: "vgs {{ docker_lvm_vg }}"
   register: vg_status
   ignore_errors: yes
-  tags: &TAGS
-    - docker.lvm
 
 - name: datastore | Create | Physical Volume
   command: "pvcreate -f {{ docker_lvm_pv }}"
   when: vg_status is failed
   tags: *TAGS
 - name: datastore | Create | Volume Group
-  lvg: 
+  lvg:
     vg: "{{ docker_lvm_vg }}"
-    pvs: "{{ docker_lvm_pv }}"
+    pvs:
+      - "{{ docker_lvm_pv }}"
     pesize: "4Mb"
   when: vg_status is failed
-  tags: *TAGS
-
-- name: datastore | Setup logical volume
-  lvol:
-    vg: "{{ docker_lvm_vg }}"
-    lv: "{{ docker_lvm_lv }}"
-    size: "{{ docker_lvm_lv_size }}"
-  tags: *TAGS
-- name: datastore | Create filesystem
-  filesystem:
-    dev: "/dev/{{ docker_lvm_vg }}/{{ docker_lvm_lv }}"
-    fstype: xfs
-  tags: *TAGS
-
-- name: datastore | Escape systemd mount filename
-  command: systemd-escape -p --suffix=mount "/var/lib/docker"
-  register: systemd_escape
-  tags: *TAGS
-- name: datastore | Create mount systemd file
-  template:
-    src: systemd-mountpoint.mount.j2
-    dest: /etc/systemd/system/{{ systemd_escape.stdout }}
-  notify: Reload systemd
-  tags: *TAGS
-- name: datastore | Enable mount file
-  systemd:
-    state: started
-    name: "{{ systemd_escape.stdout }}"
-    enabled: yes
   tags: *TAGS

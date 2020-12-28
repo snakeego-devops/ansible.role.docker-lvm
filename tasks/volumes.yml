@@ -1,0 +1,40 @@
+- name: volumes | Check logical volume
+  command: "lvs {{ docker_lvm_vg }}/{{ item.lv }}"
+  register: lv_status
+  loop: "{{ docker_lvm_volumes }}"
+  loop_control:
+    label: "{{ item.lv }}"
+  ignore_errors: yes
+  tags: &TAGS
+    - docker.lvm
+
+- name: volumes | Create logical volume
+  lvol:
+    vg: "{{ docker_lvm_vg }}"
+    lv: "{{ item.lv }}"
+    size: "{{ item.lv_size | default('5G') }}"
+  loop: "{{ docker_lvm_volumes }}"
+  when: lv_status.results[ansible_loop.index0] is failed
+  loop_control:
+    extended: yes
+    label: "{{ item.lv }}"
+  tags: *TAGS
+- name: volumes | Create filesystem
+  filesystem:
+    dev: "/dev/{{ docker_lvm_vg }}/{{ item.lv }}"
+    fstype: xfs
+  loop: "{{ docker_lvm_volumes }}"
+  when: lv_status.results[ansible_loop.index0] is failed
+  loop_control:
+    extended: yes
+    label: "{{ item.lv }}"
+  tags: *TAGS
+
+- name: volumes | Mount at boot (systemd)
+  tags: *TAGS
+  include_tasks: volumes.systemd.yml
+  when: ansible_service_mgr == "systemd"
+- name: volumes | Mount at boot (openrc)
+  tags: *TAGS
+  include_tasks: volumes.openrc.yml
+  when: ansible_service_mgr == "openrc"

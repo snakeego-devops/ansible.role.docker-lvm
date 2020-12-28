@@ -1,8 +1,9 @@
----
 docker_lvm: false
 docker_lvm_pv: /dev/sdb
 docker_lvm_vg: data
-docker_lvm_lv: docker-libs
-docker_lvm_lv_size: 10G
 
-docker_lvm_extra: []
+docker_lvm_volumes:
+  - description: Docker Root
+    lv: docker-libs
+    path: /var/lib/docker
+    lv_size: 5G

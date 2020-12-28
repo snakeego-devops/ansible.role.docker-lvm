@@ -1,10 +1,9 @@
-# - name: Setup datastore
-#   include_tasks: datastore.yml
-#   when: docker_lvm
-#   tags:
-#     - docker.lvm
-- name: Setup extra storage
-  include_tasks: extra.yml
-  when: docker_lvm and (docker_lvm_extra | length > 0)
-  tags:
+- name: Setup datastore
+  include_tasks: datastore.yml
+  when: docker_lvm
+  tags: &tags
     - docker.lvm
+- name: Setup volumes
+  include_tasks: volumes.yml
+  when: docker_lvm and docker_lvm_volumes
+  tags: *tags
