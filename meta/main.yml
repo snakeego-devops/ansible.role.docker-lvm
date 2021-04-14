@@ -1,6 +1,8 @@
 galaxy_info:
-  role_name: docker.lvm
+  role_name: docker_lvm
   description: Install and configure docker and docker-compose for CentOS/Debian
   author: Igor Voropaev <snakework10@gmail.com>
   license: MIT
   min_ansible_version: 2.4
+  platforms:
+    - name: Linux

@@ -4,7 +4,7 @@
   template:
     src: docker.lvm/openrc/volume.rc.j2
     dest: /etc/init.d/fs{{ item.path | replace('/','.') }}
-    mode: 755
+    mode: 0755
   loop: "{{ docker_lvm_volumes }}"
   loop_control:
     label: "{{ item.description }} - {{ item.path }} - {{ item.lv_size }}"
